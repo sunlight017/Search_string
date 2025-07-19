@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.30.1)
 project(search_engine)
 
 set(CMAKE_CXX_STANDARD 17)
-
+target_include_directories(search_engine PRIVATE include)
 include(FetchContent)
 FetchContent_Declare(
     nlohmann_json
