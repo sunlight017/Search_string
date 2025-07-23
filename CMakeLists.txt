@@ -1,8 +1,15 @@
-cmake_minimum_required(VERSION 3.30.1)
-project(search_engine)
+cmake_minimum_required(VERSION 3.16)
+project(SearchEngine LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-target_include_directories(search_engine PRIVATE include)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
 include(FetchContent)
 FetchContent_Declare(
     nlohmann_json
@@ -10,39 +17,52 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
-)
-FetchContent_MakeAvailable(googletest)
 
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-enable_testing()
-add_executable(search_engine
-    src/main.cpp
-    src/ConverterJSON.cpp
-    src/InvertedIndex.cpp
-    src/SearchServer.cpp
+file(GLOB_RECURSE SOURCES 
+    CONFIGURE_DEPENDS 
+    "src/*.cpp"
+    "include/*.h"
 )
 
-target_include_directories(search_engine PRIVATE include)
-target_link_libraries(search_engine PRIVATE nlohmann_json::nlohmann_json)
+add_executable(search_engine ${SOURCES})
 
-add_executable(search_engine_tests
-    test/test_main.cpp
-    test/test_invertedindex.cpp
-    test/test_searchserver.cpp
-    src/ConverterJSON.cpp
-    src/InvertedIndex.cpp
-    src/SearchServer.cpp
+
+target_include_directories(search_engine 
+    PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_include_directories(search_engine_tests PRIVATE include)
-target_link_libraries(search_engine_tests PRIVATE
+target_link_libraries(search_engine 
+    PRIVATE 
     nlohmann_json::nlohmann_json
-    gtest_main
 )
 
-include(GoogleTest)
-gtest_discover_tests(search_engine_tests)
+set(RESOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+if(EXISTS ${RESOURCES_DIR} AND IS_DIRECTORY ${RESOURCES_DIR})
+    message(STATUS "Copying resources from: ${RESOURCES_DIR}")
+    file(COPY ${RESOURCES_DIR} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+    file(COPY 
+        ${CMAKE_CURRENT_SOURCE_DIR}/config.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/requests.json
+        DESTINATION ${CMAKE_BINARY_DIR}/bin
+    )
+else()
+    message(WARNING "Resources directory not found at: ${RESOURCES_DIR}")
+endif()
+
+if(WIN32)
+    target_compile_definitions(search_engine 
+        PRIVATE 
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+    )
+endif()
+
+option(BUILD_TESTS "Build tests" OFF)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()
+
+message(STATUS "Project configuration complete")
+message(STATUS "Binary output directory: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
