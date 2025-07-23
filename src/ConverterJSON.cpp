@@ -1,4 +1,4 @@
-#include "ConverterJSON.h"
+#include "СonverterJSON.h"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -86,7 +86,10 @@ void ConverterJSON::putAnswers(std::vector<std::vector<std::pair<int, float>>> a
     nlohmann::json answersJson;
 
     for (size_t i = 0; i < answers.size(); ++i) {
-        std::string requestId = "request" + (i < 9 ? "00" : (i < 99 ? "0" : "")) + std::to_string(i + 1);
+        std::string requestId = "request" +
+            std::string(i < 9 ? "00" : (i < 99 ? "0" : "")) +
+            std::to_string(i + 1);
+
         nlohmann::json requestResult;
 
         if (answers[i].empty()) {
