@@ -26,7 +26,7 @@ public:
     std::vector<std::vector<RelativeIndex>> search(const std::vector<std::string>& queries_input);
 
 private:
-    InvertedIndex _index;
+    InvertedIndex& _index;
     std::vector<std::string> splitIntoWords(const std::string& query);
     std::vector<size_t> findDocsWithAllWords(const std::vector<std::string>& words);
     std::vector<RelativeIndex> calculateRelevance(const std::vector<size_t>& doc_ids,
