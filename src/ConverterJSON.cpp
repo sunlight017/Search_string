@@ -1,21 +1,18 @@
-#include "СonverterJSON.h"
+#include "ConverterJSON.h"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-
+#include <sstream>
 ConverterJSON::ConverterJSON() {
     try {
-        std::ifstream configFile("config.json");
-        if (!configFile.is_open()) {
-            throw std::runtime_error("config file is missing");
+        if (!std::filesystem::exists("config.json")) {
+            throw std::runtime_error("config.json is missing");
         }
-        configFile >> config;
-        configFile.close();
-
-        std::ifstream requestsFile("requests.json");
-        if (requestsFile.is_open()) {
-            requestsFile >> requests;
-            requestsFile.close();
+        std::ifstream configFile("config.json");
+        config = nlohmann::json::parse(configFile);
+        if (std::filesystem::exists("requests.json")) {
+            std::ifstream requestsFile("requests.json");
+            requests = nlohmann::json::parse(requestsFile);
         }
 
         validateConfig();
@@ -61,10 +58,7 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
 }
 
 int ConverterJSON::GetResponsesLimit() {
-    if (config["config"].contains("max_responses")) {
-        return config["config"]["max_responses"];
-    }
-    return 5;
+    return config["config"].value("max_responses", 5);
 }
 
 std::vector<std::string> ConverterJSON::GetRequests() {
@@ -81,32 +75,31 @@ std::vector<std::string> ConverterJSON::GetRequests() {
     return requestList;
 }
 
-void ConverterJSON::putAnswers(std::vector<std::vector<std::pair<int, float>>> answers) {
+void ConverterJSON::putAnswers(const std::vector<std::vector<std::pair<size_t, float>>>& answers) {
     nlohmann::json result;
-    nlohmann::json answersJson;
 
-    for (size_t i = 0; i < answers.size(); ++i) {
-        std::string requestId = "request" +
-            std::string(i < 9 ? "00" : (i < 99 ? "0" : "")) +
+    for (size_t i = 0; i < answers.size(); i++) {
+        std::string requestId = std::string("request") +
+            (i < 9 ? std::string("00") : (i < 99 ? std::string("0") : std::string(""))) +
             std::to_string(i + 1);
 
         nlohmann::json requestResult;
 
         if (answers[i].empty()) {
-            requestResult["result"] = "false";
+            requestResult["result"] = false;
         }
         else {
-            requestResult["result"] = "true";
+            requestResult["result"] = true;
 
             if (answers[i].size() > 1) {
-                nlohmann::json relevanceArray;
-                for (const auto& [docId, rank] : answers[i]) {
-                    relevanceArray.push_back({
-                        {"docid", docId},
+                nlohmann::json relevance;
+                for (const auto& [doc_id, rank] : answers[i]) {
+                    relevance.push_back({
+                        {"docid", doc_id},
                         {"rank", rank}
                         });
                 }
-                requestResult["relevance"] = relevanceArray;
+                requestResult["relevance"] = relevance;
             }
             else {
                 requestResult["docid"] = answers[i][0].first;
@@ -114,25 +107,16 @@ void ConverterJSON::putAnswers(std::vector<std::vector<std::pair<int, float>>> a
             }
         }
 
-        answersJson[requestId] = requestResult;
+        result["answers"][requestId] = requestResult;
     }
 
-    result["answers"] = answersJson;
-
-    std::ofstream outFile("answers.json");
-    outFile << result.dump(4);
-    outFile.close();
+    std::ofstream("answers.json") << result.dump(4);
 }
 
 std::string ConverterJSON::readFile(const std::string& path) {
     std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("file not found");
+    if (!file) {
+        throw std::runtime_error("Cannot open file: " + path);
     }
-
-    std::string content((std::istreambuf_iterator<char>(file)),
-        std::istreambuf_iterator<char>());
-    file.close();
-
-    return content;
+    return std::string(std::istreambuf_iterator<char>(file), {});
 }
