@@ -1,11 +1,10 @@
 #ifndef SEARCHSERVER_H
 #define SEARCHSERVER_H
 
+#include "InvertedIndex.h"
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <numeric>
-#include "InvertedIndex.h"
 
 struct RelativeIndex {
     size_t doc_id;
@@ -22,15 +21,20 @@ struct RelativeIndex {
 
 class SearchServer {
 public:
-    SearchServer(InvertedIndex& idx) : _index(idx) {};
+    SearchServer(InvertedIndex& idx, int max_responses)
+        : index(idx), max_responses(max_responses) {
+    };
+
     std::vector<std::vector<RelativeIndex>> search(const std::vector<std::string>& queries_input);
 
 private:
-    InvertedIndex& _index;
+    InvertedIndex& index;
+    const int max_responses;
+
     std::vector<std::string> splitIntoWords(const std::string& query);
     std::vector<size_t> findDocsWithAllWords(const std::vector<std::string>& words);
     std::vector<RelativeIndex> calculateRelevance(const std::vector<size_t>& doc_ids,
         const std::vector<std::string>& words);
 };
 
-#endif // SEARCHSERVER_H
+#endif
