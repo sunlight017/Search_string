@@ -6,8 +6,6 @@
 #include <map>
 #include <mutex>
 #include <algorithm>
-#include <sstream>
-#include <thread>
 
 struct Entry {
     size_t doc_id;
@@ -21,15 +19,17 @@ struct Entry {
 class InvertedIndex {
 public:
     InvertedIndex() = default;
+
     void UpdateDocumentBase(std::vector<std::string> input_docs);
     std::vector<Entry> GetWordCount(const std::string& word);
 
 private:
     std::vector<std::string> docs;
     std::map<std::string, std::vector<Entry>> freq_dictionary;
-    std::mutex dict_access;
+    std::mutex docs_mutex;
+
     void indexDocument(size_t doc_id, const std::string& text);
     std::vector<std::string> splitIntoWords(const std::string& text);
 };
 
-#endif // INVERTEDINDEX_H
+#endif
