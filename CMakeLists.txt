@@ -36,3 +36,15 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/resources)
 endif()
 configure_file(config.json ${CMAKE_BINARY_DIR}/bin/config.json COPYONLY)
 configure_file(requests.json ${CMAKE_BINARY_DIR}/bin/requests.json COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.json ${CMAKE_BINARY_DIR}/bin/config.json COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/requests.json ${CMAKE_BINARY_DIR}/bin/requests.json COPYONLY)
+
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/resources)
+    file(COPY resources DESTINATION ${CMAKE_BINARY_DIR}/bin)
+endif()
+if(WIN32)
+    add_custom_command(TARGET search_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources
+        $<TARGET_FILE_DIR:search_engine>/resources)
+endif()
