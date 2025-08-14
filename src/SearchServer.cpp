@@ -7,6 +7,10 @@ std::vector<std::vector<RelativeIndex>> SearchServer::search(
 
     for (const auto& query : queries_input) {
         auto words = splitIntoWords(query);
+        if (query.empty()) {
+            results.emplace_back();
+            continue;
+        }
         if (words.empty()) {
             results.emplace_back();
             continue;
