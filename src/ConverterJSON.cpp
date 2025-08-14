@@ -28,13 +28,18 @@ void ConverterJSON::validateConfig() {
         throw std::runtime_error("config file is empty");
     }
 
-    if (!config["config"].contains("name") ||
-        !config["config"].contains("version")) {
+    auto& configSection = config["config"];
+    if (!configSection.contains("name") ||
+        !configSection.contains("version")) {
         throw std::runtime_error("config file has incorrect format");
     }
 
-    if (config["config"]["version"] != "0.1") {
+    if (configSection["version"] != "0.1") {
         throw std::runtime_error("config.json has incorrect file version");
+    }
+
+    if (!config.contains("files")) {
+        throw std::runtime_error("config file missing 'files' section");
     }
 }
 
@@ -46,11 +51,15 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
     }
 
     for (const auto& filePath : config["files"]) {
+        if (!std::filesystem::exists(filePath)) {
+            std::cerr << "Warning: File not found - " << filePath << std::endl;
+            continue;
+        }
         try {
             documents.push_back(readFile(filePath));
         }
-        catch (const std::exception& e) {
-            std::cerr << "Error reading file " << filePath << ": " << e.what() << std::endl;
+        catch (...) {
+            std::cerr << "Error reading file: " << filePath << std::endl;
         }
     }
 
